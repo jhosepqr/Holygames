@@ -94,7 +94,19 @@ class PeregrinoScene extends Phaser.Scene {
     // this.btnUp = this.add.sprite(...).setInteractive();
 
     // Graphics for drawing
+    // Graphics for drawing (only for dynamic fog now)
     this.graphics = this.add.graphics();
+    this.graphics.setDepth(100);
+
+    // Groups for optimized rendering
+    this.mapGroup = this.add.group();
+    this.entityGroup = this.add.group();
+    // Groups for optimized rendering
+    this.mapGroup = this.add.group();
+    this.entityGroup = this.add.group();
+
+    // Generate Textures once
+    this.createTextures();
 
     // Generate initial map
     this.generateMap();
@@ -106,6 +118,145 @@ class PeregrinoScene extends Phaser.Scene {
     this.peregrinoStart();
   }
 
+  createTextures() {
+    // 1. Wall Texture
+    let g = this.make.graphics({ x: 0, y: 0, add: false });
+    g.fillStyle(0x1e293b);
+    g.fillRect(0, 0, 40, 40);
+    g.fillStyle(0x334155);
+    g.fillRect(4, 4, 32, 32);
+    g.fillStyle(0x0f172a);
+    g.fillRect(12, 12, 16, 16);
+    g.generateTexture('wall', 40, 40);
+
+    // 2. Floor Texture
+    g.clear();
+    g.fillStyle(0x78716c);
+    g.fillRect(0, 0, 40, 40);
+    g.generateTexture('floor1', 40, 40);
+    g.clear();
+    g.fillStyle(0x57534e);
+    g.fillRect(0, 0, 40, 40);
+    g.generateTexture('floor2', 40, 40);
+
+    // 3. Exit/Santuario Texture
+    g.clear();
+    g.fillStyle(0x6b46c1);
+    g.fillRect(0, 0, 40, 40);
+    g.fillStyle(0xffd700);
+    g.fillRect(0, 0, 5, 40);
+    g.fillRect(35, 0, 5, 40);
+    g.generateTexture('exit', 40, 40);
+
+    // 4. Player Texture (Walker)
+    g.clear();
+    // Head
+    g.fillStyle(0xffdbac);
+    g.fillCircle(20, 10, 6);
+    // Body
+    g.fillStyle(0x3b82f6); // Default blue
+    g.fillRect(12, 16, 16, 18);
+    // Legs
+    g.fillStyle(0x1a202c);
+    g.fillRect(14, 34, 4, 6);
+    g.fillRect(22, 34, 4, 6);
+    g.generateTexture('player', 40, 40);
+
+    // 5. Guard Texture
+    g.clear();
+    // Skin
+    g.fillStyle(0xc68e17);
+    g.fillCircle(20, 12, 7);
+    // Nemes
+    g.fillStyle(0x1a365d);
+    g.beginPath();
+    g.moveTo(16, 5);
+    g.lineTo(24, 5);
+    g.lineTo(28, 15);
+    g.lineTo(12, 15);
+    g.fill();
+    g.lineStyle(1, 0xffd700);
+    g.beginPath();
+    g.moveTo(20, 5);
+    g.lineTo(20, 15);
+    g.stroke();
+    // Body
+    g.fillStyle(0xffffff);
+    g.fillRect(14, 28, 12, 10);
+    g.fillStyle(0xc68e17);
+    g.fillRect(13, 18, 14, 10);
+    // Collar
+    g.fillStyle(0xffd700);
+    g.fillCircle(20, 19, 4);
+    // Spear
+    g.lineStyle(2, 0x5c4033);
+    g.beginPath();
+    g.moveTo(30, 2);
+    g.lineTo(30, 38);
+    g.stroke();
+    g.fillStyle(0xc0c0c0);
+    g.beginPath();
+    g.moveTo(30, 0);
+    g.lineTo(33, 6);
+    g.lineTo(27, 6);
+    g.fill();
+    g.fill();
+    g.generateTexture('wolf', 40, 40);
+
+    // 6. Lamp Texture
+    g.clear();
+    g.fillStyle(0xffd700);
+    g.beginPath();
+    g.moveTo(10, 25);
+    g.lineTo(15, 32);
+    g.lineTo(25, 32);
+    g.lineTo(30, 25);
+    g.lineTo(10, 25);
+    g.fill();
+    g.lineStyle(2, 0xffd700);
+    g.beginPath();
+    g.arc(8, 25, 4, 0, Math.PI, true);
+    g.stroke();
+    g.fillStyle(0xff4500);
+    g.beginPath();
+    g.arc(30, 22, 3, 0, Math.PI * 2);
+    g.fill();
+    g.generateTexture('lamp', 40, 40);
+
+    // 7. Fruit Texture
+    g.clear();
+    g.fillStyle(0xf87171);
+    g.fillCircle(20, 20, 8);
+    g.fillStyle(0x48bb78);
+    g.fillRect(20, 10, 4, 4);
+    g.generateTexture('fruit', 40, 40);
+
+    // 8. Scroll Texture
+    g.clear();
+    g.fillStyle(0xf7fafc);
+    g.fillRect(10, 10, 20, 20);
+    g.lineStyle(1, 0x000000);
+    g.strokeRect(10, 10, 20, 20);
+    g.generateTexture('scroll', 40, 40);
+
+    g.destroy();
+
+    // 10. Fog Texture (Soft Light Gradient)
+    const fogSize = 2000;
+    const fogCanvas = this.textures.createCanvas('fog', fogSize, fogSize);
+    const ctx = fogCanvas.context;
+
+    const grd = ctx.createRadialGradient(fogSize / 2, fogSize / 2, 0, fogSize / 2, fogSize / 2, fogSize / 2);
+    grd.addColorStop(0, 'rgba(26, 32, 44, 0)');
+    grd.addColorStop(0.025, 'rgba(26, 32, 44, 0)');
+    grd.addColorStop(0.1, 'rgba(26, 32, 44, 1.0)');
+    grd.addColorStop(1, 'rgba(26, 32, 44, 1.0)');
+
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, fogSize, fogSize);
+    fogCanvas.refresh();
+  }
+
   generateMap() {
     this.map = [];
     this.entities = [];
@@ -115,27 +266,29 @@ class PeregrinoScene extends Phaser.Scene {
     this.player.y = 1;
     this.state.lamps = 0;
 
+    this.mapGroup.clear(true, true);
+    this.entityGroup.clear(true, true);
+
     for (let y = 0; y < this.GRID_H; y++) {
       let row = [];
       for (let x = 0; x < this.GRID_W; x++) {
-        if (
-          x === 0 ||
-          x === this.GRID_W - 1 ||
-          y === 0 ||
-          y === this.GRID_H - 1
-        )
-          row.push(1);
-        else row.push(Math.random() > wallProb ? 1 : 0);
+        let isWall = false;
+        if (x === 0 || x === this.GRID_W - 1 || y === 0 || y === this.GRID_H - 1) isWall = true;
+        else isWall = Math.random() > wallProb;
+
+        row.push(isWall ? 1 : 0);
+        let key = isWall ? 'wall' : ((x + y) % 2 === 0 ? 'floor1' : 'floor2');
+        this.mapGroup.create(x * 40, y * 40, key).setOrigin(0);
       }
       this.map.push(row);
     }
 
-    let cx = 1,
-      cy = 1;
+    let cx = 1, cy = 1;
     while (cx !== this.GRID_W - 2 || cy !== this.GRID_H - 2) {
       this.map[cy][cx] = 0;
-      if (cx < this.GRID_W - 2 && cy < this.GRID_H - 2)
-        Math.random() > 0.5 ? cx++ : cy++;
+      let key = (cx + cy) % 2 === 0 ? 'floor1' : 'floor2';
+      this.mapGroup.create(cx * 40, cy * 40, key).setOrigin(0);
+      if (cx < this.GRID_W - 2 && cy < this.GRID_H - 2) Math.random() > 0.5 ? cx++ : cy++;
       else if (cx < this.GRID_W - 2) cx++;
       else cy++;
     }
@@ -143,6 +296,8 @@ class PeregrinoScene extends Phaser.Scene {
     this.map[this.GRID_H - 2][this.GRID_W - 2] = 9;
     this.map[this.GRID_H - 2][this.GRID_W - 3] = 0;
     this.map[this.GRID_H - 3][this.GRID_W - 2] = 0;
+
+    this.mapGroup.create((this.GRID_W - 2) * 40, (this.GRID_H - 2) * 40, 'exit').setOrigin(0);
 
     this.spawnEntity("lamp", 2 + this.state.level);
     this.spawnEntity("wolf", this.state.level);
@@ -152,17 +307,14 @@ class PeregrinoScene extends Phaser.Scene {
 
   spawnEntity(type, count) {
     for (let i = 0; i < count; i++) {
-      let placed = false,
-        att = 0;
+      let placed = false, att = 0;
       while (!placed && att < 100) {
         let rx = Math.floor(Math.random() * (this.GRID_W - 2)) + 1;
         let ry = Math.floor(Math.random() * (this.GRID_H - 2)) + 1;
-        if (
-          this.map[ry][rx] === 0 &&
-          !(rx === this.player.x && ry === this.player.y)
-        ) {
+        if (this.map[ry][rx] === 0 && !(rx === this.player.x && ry === this.player.y)) {
           if (!this.entities.find((e) => e.x === rx && e.y === ry)) {
-            this.entities.push({ type: type, x: rx, y: ry });
+            let sprite = this.entityGroup.create(rx * 40, ry * 40, type).setOrigin(0);
+            this.entities.push({ type: type, x: rx, y: ry, sprite: sprite });
             placed = true;
           }
         }
@@ -172,11 +324,10 @@ class PeregrinoScene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Clear graphics
     this.graphics.clear();
-
-    // Movement cooldown
+    if (this.playerSprite) this.playerSprite.setPosition(this.player.x * 40, this.player.y * 40);
     if (this.moveCooldown > 0) this.moveCooldown--;
+    this.moveTimer = (this.moveTimer || 0) + 1;
 
     if (this.state.mode === "PLAY") {
       this.state.dayTime += this.state.isSabbath ? 0.5 : 0.1;
@@ -184,141 +335,94 @@ class PeregrinoScene extends Phaser.Scene {
         this.state.dayTime = 0;
         this.state.dayIndex = (this.state.dayIndex + 1) % 7;
       }
-
       let isFriEve = this.state.dayIndex === 5 && this.state.dayTime > 80;
       let isSat = this.state.dayIndex === 6 && this.state.dayTime < 80;
       this.state.isSabbath = isFriEve || isSat;
+      document.getElementById("sabbath-overlay").style.display = this.state.isSabbath ? "flex" : "none";
 
-      // UI Overlay
-      document.getElementById("sabbath-overlay").style.display = this.state
-        .isSabbath
-        ? "flex"
-        : "none";
-
-      // Enemies
       this.enemyTimer = this.enemyTimer || 0;
       this.enemyTimer++;
       if (this.enemyTimer > Math.max(10, 40 - this.state.level * 2)) {
-        this.entities
-          .filter((e) => e.type === "wolf")
-          .forEach((w) => {
-            let moves = [
-              { x: 0, y: 1 },
-              { x: 0, y: -1 },
-              { x: 1, y: 0 },
-              { x: -1, y: 0 },
-            ];
+        this.entities.filter((e) => e.type === "wolf").forEach((w) => {
+          let tx = w.x, ty = w.y;
+          const chaseChance = this.state.level * 0.1;
+          if (Math.random() < chaseChance) {
+            if (w.x < this.player.x) tx++;
+            else if (w.x > this.player.x) tx--;
+            else if (w.y < this.player.y) ty++;
+            else if (w.y > this.player.y) ty--;
+          } else {
+            let moves = [{ x: 0, y: 1 }, { x: 0, y: -1 }, { x: 1, y: 0 }, { x: -1, y: 0 }];
             let m = moves[Math.floor(Math.random() * 4)];
-            let tx = w.x + m.x,
-              ty = w.y + m.y;
-            if (this.map[ty][tx] !== 1 && this.map[ty][tx] !== 9) {
-              w.x = tx;
-              w.y = ty;
-            }
-            if (w.x === this.player.x && w.y === this.player.y) {
-              this.state.faith -= 15;
-              this.createParts(this.player.x, this.player.y, "red", 10);
-            }
-          });
+            tx += m.x; ty += m.y;
+          }
+          if (this.map[ty][tx] !== 1 && this.map[ty][tx] !== 9) {
+            w.x = tx; w.y = ty;
+          }
+          if (w.x === this.player.x && w.y === this.player.y) {
+            this.state.faith -= 15;
+            this.createParts(this.player.x, this.player.y, "red", 10);
+          }
+        });
         this.enemyTimer = 0;
       }
-
-      // Particles
-      this.particles.forEach((p) => {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.life -= 0.1;
-      });
+      this.entities.forEach(e => { if (e.sprite) e.sprite.setPosition(e.x * 40, e.y * 40); });
+      this.particles.forEach((p) => { p.x += p.vx; p.y += p.vy; p.life -= 0.1; });
       this.particles = this.particles.filter((p) => p.life > 0);
-
       if (this.state.faith <= 0) this.endGame(false);
     }
 
-    // Handle input
-    if (this.state.mode === "PLAY" || this.state.mode === "SABBATH") {
-      this.handleInput(time);
-    }
-
-    // Draw
-    this.drawMap();
-    this.drawEntities();
+    if (this.state.mode === "PLAY" || this.state.mode === "SABBATH") this.handleInput(time);
     this.drawParticles();
 
-    // Lighting
-    let alpha = 0;
-    if (this.state.dayTime > 70) alpha = (this.state.dayTime - 70) / 60;
-    if (alpha > 0) {
-      this.cameras.main.setAlpha(1 - alpha);
-    }
+    // Lighting (Day/Night cycle removed for constant light)
+    // We keep the time for Sabbath logic but don't fade the camera
+    // let alpha = 0;
+    // if (this.state.dayTime > 70) alpha = (this.state.dayTime - 70) / 60;
+    // if (alpha > 0) this.cameras.main.setAlpha(1 - alpha);
 
-    // Update HTML UI
-    document.getElementById("faith-display").innerText = `Fe: ${Math.floor(
-      this.state.faith
-    )}%`;
-    document.getElementById("day-display").innerText =
-      this.DAYS[this.state.dayIndex];
-    document.getElementById("time-display").innerText =
-      this.state.dayTime > 80 ? "Noche" : "Día";
-    document.getElementById(
-      "lamps-display"
-    ).innerText = `Lámparas: ${this.state.lamps}/${this.state.lampsNeeded}`;
-    document.getElementById(
-      "level-display"
-    ).innerText = `Nivel ${this.state.level}`;
+    document.getElementById("faith-display").innerText = `Fe: ${Math.floor(this.state.faith)}%`;
+    document.getElementById("day-display").innerText = this.DAYS[this.state.dayIndex];
+    document.getElementById("time-display").innerText = this.state.dayTime > 80 ? "Noche" : "Día";
+    document.getElementById("lamps-display").innerText = `Lámparas: ${this.state.lamps}/${this.state.lampsNeeded}`;
+    document.getElementById("level-display").innerText = `Nivel ${this.state.level}`;
+
+    this.drawFog();
+  }
+
+  drawFog() {
+    const width = this.sys.canvas.width;
+    const height = this.sys.canvas.height;
+    const px = this.player.x * 40 + 20;
+    const py = this.player.y * 40 + 20;
+
+    if (this.fogSprite) {
+      this.fogSprite.x = px;
+      this.fogSprite.y = py;
+      const targetRadius = 80 + (this.state.lamps * 40);
+      const scale = targetRadius / 50;
+      this.fogSprite.setScale(scale);
+    }
   }
 
   handleInput(time) {
     if (this.state.mode === "QUIZ") return;
-
-    // Hide message if pressing direction keys
-    if (
-      isMessageVisible &&
-      (Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
-        Phaser.Input.Keyboard.JustDown(this.cursors.down) ||
-        Phaser.Input.Keyboard.JustDown(this.cursors.left) ||
-        Phaser.Input.Keyboard.JustDown(this.cursors.right) ||
-        Phaser.Input.Keyboard.JustDown(this.keys.W) ||
-        Phaser.Input.Keyboard.JustDown(this.keys.S) ||
-        Phaser.Input.Keyboard.JustDown(this.keys.A) ||
-        Phaser.Input.Keyboard.JustDown(this.keys.D))
-    ) {
+    if (isMessageVisible && (Phaser.Input.Keyboard.JustDown(this.cursors.up) || Phaser.Input.Keyboard.JustDown(this.cursors.down) || Phaser.Input.Keyboard.JustDown(this.cursors.left) || Phaser.Input.Keyboard.JustDown(this.cursors.right) || Phaser.Input.Keyboard.JustDown(this.keys.W) || Phaser.Input.Keyboard.JustDown(this.keys.S) || Phaser.Input.Keyboard.JustDown(this.keys.A) || Phaser.Input.Keyboard.JustDown(this.keys.D))) {
       hideMessage();
     }
-
-    let moved = false;
-    let dx = 0,
-      dy = 0;
-
+    let moved = false; let dx = 0, dy = 0;
     if (this.state.isSabbath) {
-      if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) {
+      if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE) || Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
         this.state.faith = Math.min(100, this.state.faith + 5);
         this.createParts(this.player.x, this.player.y, "gold", 5);
+        showMessage("Orando... +5 Fe");
         return;
       }
     }
-
-    // Check each direction
-    if (
-      Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
-      (this.cursors.up.isDown && this.moveTimer > 3)
-    ) {
-      dy = -1;
-    } else if (
-      Phaser.Input.Keyboard.JustDown(this.cursors.down) ||
-      (this.cursors.down.isDown && this.moveTimer > 3)
-    ) {
-      dy = 1;
-    } else if (
-      Phaser.Input.Keyboard.JustDown(this.cursors.left) ||
-      (this.cursors.left.isDown && this.moveTimer > 3)
-    ) {
-      dx = -1;
-    } else if (
-      Phaser.Input.Keyboard.JustDown(this.cursors.right) ||
-      (this.cursors.right.isDown && this.moveTimer > 3)
-    ) {
-      dx = 1;
-    }
+    if (Phaser.Input.Keyboard.JustDown(this.cursors.up) || (this.cursors.up.isDown && this.moveTimer > 3)) dy = -1;
+    else if (Phaser.Input.Keyboard.JustDown(this.cursors.down) || (this.cursors.down.isDown && this.moveTimer > 3)) dy = 1;
+    else if (Phaser.Input.Keyboard.JustDown(this.cursors.left) || (this.cursors.left.isDown && this.moveTimer > 3)) dx = -1;
+    else if (Phaser.Input.Keyboard.JustDown(this.cursors.right) || (this.cursors.right.isDown && this.moveTimer > 3)) dx = 1;
 
     if (dx !== 0 || dy !== 0) {
       if (this.state.isSabbath) {
@@ -328,45 +432,41 @@ class PeregrinoScene extends Phaser.Scene {
       let tx = this.player.x + dx;
       let ty = this.player.y + dy;
       if (this.map[ty][tx] !== 1) {
-        this.player.x = tx;
-        this.player.y = ty;
+        this.player.x = tx; this.player.y = ty;
         this.checkCol();
         moved = true;
       }
     }
-
     if (moved) {
-      this.moveTimer = 0;
-      this.lastDx = dx;
-      this.lastDy = dy;
+      this.moveTimer = 0; this.lastDx = dx; this.lastDy = dy;
     }
   }
 
   checkCol() {
-    let idx = this.entities.findIndex(
-      (e) => e.x === this.player.x && e.y === this.player.y
-    );
+    let idx = this.entities.findIndex((e) => e.x === this.player.x && e.y === this.player.y);
     if (idx > -1) {
       let e = this.entities[idx];
       if (e.type === "lamp") {
         this.state.lamps++;
+        if (e.sprite) e.sprite.destroy();
         this.entities.splice(idx, 1);
         this.createParts(this.player.x, this.player.y, "gold", 10);
         showMessage("¡Encontraste una lámpara! +1");
       }
       if (e.type === "fruit") {
         this.state.faith = Math.min(100, this.state.faith + 20);
+        if (e.sprite) e.sprite.destroy();
         this.entities.splice(idx, 1);
         showMessage("¡Fruta espiritual! +20 Fe");
       }
       if (e.type === "wolf") {
         this.state.faith -= 20;
-        this.player.x = 1;
-        this.player.y = 1;
+        this.player.x = 1; this.player.y = 1;
         this.createParts(this.player.x, this.player.y, "red", 10);
         showMessage("¡Atacado por lobo! -20 Fe");
       }
       if (e.type === "scroll") {
+        if (e.sprite) e.sprite.destroy();
         this.entities.splice(idx, 1);
         this.startQuiz();
         showMessage("Pergamino de doctrina encontrado");
@@ -375,11 +475,7 @@ class PeregrinoScene extends Phaser.Scene {
     if (this.map[this.player.y][this.player.x] === 9) {
       if (this.state.lamps >= this.state.lampsNeeded) this.nextLevel();
       else {
-        showMessage(
-          `Necesitas ${
-            this.state.lampsNeeded - this.state.lamps
-          } lámparas más para entrar al Santuario.`
-        );
+        showMessage(`Necesitas ${this.state.lampsNeeded - this.state.lamps} lámparas más para entrar al Santuario.`);
         this.player.y--;
       }
     }
@@ -430,102 +526,10 @@ class PeregrinoScene extends Phaser.Scene {
   createParts(x, y, c, n) {
     for (let i = 0; i < n; i++) {
       this.particles.push({
-        x: x * 40 + 20,
-        y: y * 40 + 20,
-        vx: (Math.random() - 0.5) * 4,
-        vy: (Math.random() - 0.5) * 4,
-        life: 1,
-        c: c,
+        x: x * 40 + 20, y: y * 40 + 20,
+        vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4,
+        life: 1, c: c,
       });
-    }
-  }
-
-  endGame(win) {
-    this.state.mode = "MENU";
-    document.getElementById("end-modal").style.display = "block";
-    document.getElementById("end-title").innerText = win
-      ? "¡VICTORIA!"
-      : "FE AGOTADA";
-    document.getElementById("end-msg").innerText = win
-      ? "Has llegado a la Tierra Nueva."
-      : "Inténtalo de nuevo.";
-  }
-
-  drawMap() {
-    for (let y = 0; y < this.GRID_H; y++) {
-      for (let x = 0; x < this.GRID_W; x++) {
-        let px = x * 40,
-          py = y * 40;
-        if (this.map[y][x] === 1) {
-          this.graphics.fillStyle(0x1e293b);
-          this.graphics.fillRect(px, py, 40, 40);
-          this.graphics.fillStyle(0x334155);
-          this.graphics.fillRect(px + 4, py + 4, 32, 32);
-          this.graphics.fillStyle(0x0f172a);
-          this.graphics.fillRect(px + 12, py + 12, 16, 16);
-        } else if (this.map[y][x] === 9) {
-          this.graphics.fillStyle(0x6b46c1);
-          this.graphics.fillRect(px, py, 40, 40);
-          this.graphics.fillStyle(0xffd700);
-          this.graphics.fillRect(px, py, 5, 40);
-          this.graphics.fillRect(px + 35, py, 5, 40);
-        } else {
-          let color = (x + y) % 2 === 0 ? 0x78716c : 0x57534e;
-          this.graphics.fillStyle(color);
-          this.graphics.fillRect(px, py, 40, 40);
-        }
-      }
-    }
-  }
-
-  drawEntities() {
-    this.entities.forEach((e) => {
-      let px = e.x * 40,
-        py = e.y * 40;
-      if (e.type === "wolf") {
-        this.graphics.fillStyle(0x718096);
-        this.graphics.fillTriangle(
-          px + 10,
-          py + 30,
-          px + 30,
-          py + 30,
-          px + 20,
-          py + 10
-        );
-        this.graphics.fillStyle(0xffffff);
-        this.graphics.fillCircle(px + 18, py + 18, 1);
-      } else if (e.type === "lamp") {
-        this.graphics.fillStyle(0xd69e2e);
-        this.graphics.fillEllipse(px + 20, py + 25, 16, 8);
-        this.graphics.fillStyle(0xffff00);
-        this.graphics.fillCircle(px + 20, py + 15, 4);
-      } else if (e.type === "fruit") {
-        this.graphics.fillStyle(0xf87171);
-        this.graphics.fillCircle(px + 20, py + 20, 8);
-        this.graphics.fillStyle(0x48bb78);
-        this.graphics.fillRect(px + 20, py + 10, 4, 4);
-      } else if (e.type === "scroll") {
-        this.graphics.fillStyle(0xf7fafc);
-        this.graphics.fillRect(px + 10, py + 10, 20, 20);
-        this.graphics.lineStyle(1, 0x000000);
-        this.graphics.strokeRect(px + 10, py + 10, 20, 20);
-        this.graphics.fillStyle(0x000000);
-        this.add.text(px + 16, py + 25, "?", {
-          fontSize: "14px",
-          color: "#000",
-        });
-      }
-    });
-
-    // Draw player
-    let px = this.player.x * 40,
-      py = this.player.y * 40;
-    let color = this.state.isSabbath ? 0x90cdf4 : 0x3b82f6;
-    this.graphics.fillStyle(color);
-    this.graphics.fillCircle(px + 20, py + 20, 12);
-    if (this.state.faith > 50) {
-      this.graphics.lineStyle(2, 0xffd700);
-      this.graphics.strokeEllipse(px + 20, py + 5, 20, 6);
     }
   }
 
@@ -536,6 +540,13 @@ class PeregrinoScene extends Phaser.Scene {
     });
   }
 
+  endGame(win) {
+    this.state.mode = "MENU";
+    document.getElementById("end-modal").style.display = "block";
+    document.getElementById("end-title").innerText = win ? "¡VICTORIA!" : "FE AGOTADA";
+    document.getElementById("end-msg").innerText = win ? "Has llegado a la Tierra Nueva." : "Inténtalo de nuevo.";
+  }
+
   peregrinoStart() {
     document.getElementById("start-screen").style.display = "none";
     document.getElementById("end-modal").style.display = "none";
@@ -544,6 +555,16 @@ class PeregrinoScene extends Phaser.Scene {
     this.state.lamps = 0;
     this.state.dayTime = 40;
     this.state.dayIndex = 5;
+
+    if (this.playerSprite) this.playerSprite.destroy();
+    this.playerSprite = this.add.sprite(0, 0, 'player').setOrigin(0);
+    this.playerSprite.setDepth(101); // Ensure player is always visible above fog
+
+    if (this.fogSprite) this.fogSprite.destroy();
+    this.fogSprite = this.add.image(0, 0, 'fog');
+    this.fogSprite.setDepth(100);
+    this.fogSprite.setOrigin(0.5);
+
     this.generateMap();
     this.state.mode = "PLAY";
   }
@@ -554,13 +575,6 @@ class PeregrinoScene extends Phaser.Scene {
 }
 
 // Message system
-function showMessage(msg) {
-  const overlay = document.getElementById("message-overlay");
-  overlay.querySelector("div").innerText = msg;
-  overlay.style.display = "flex";
-  setTimeout(() => (overlay.style.display = "none"), 3000);
-}
-
 // Global functions for HTML onclick
 window.peregrinoStart = function () {
   if (game && game.scene.getScene("PeregrinoScene")) {
@@ -587,7 +601,7 @@ function showMessage(msg) {
       overlay.style.display = "none";
       isMessageVisible = false;
     }
-  }, 3000);
+  }, 4500); // Increased to 4.5 seconds
 }
 
 function hideMessage() {

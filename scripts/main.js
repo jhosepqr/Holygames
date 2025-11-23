@@ -43,7 +43,7 @@ function launchGame(gameId) {
 
 function exitGame() {
   if (game) {
-    game.destroy(true);
+    game.destroy(false); // Don't remove canvas
     game = null;
   }
   document.getElementById("game-wrapper").style.display = "none";
@@ -52,6 +52,7 @@ function exitGame() {
 
 function resizeCanvas() {
   const cvs = document.getElementById("gameCanvas");
+  if (!cvs) return; // Safety check
   const container = document.getElementById("game-wrapper");
   // Logic to keep pixel art aspect ratio or fill
   // For simplicity in this hybrid view, we center it
