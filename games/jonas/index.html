@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Jonás y la Ballena - HolyGame</title>
+
+  <!-- Fonts -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap"
+    rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <!-- Back Button -->
+  <button id="back-btn" onclick="goBack()">◀ VOLVER AL HUB</button>
+
+  <!-- Game Container -->
+  <div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- HUD -->
+    <div id="hud">
+      <div class="stat-item">
+        <div>Puntuación</div>
+        <div class="stat-value" id="score">0</div>
+      </div>
+      <div class="stat-item">
+        <div>Récord</div>
+        <div class="stat-value" id="high-score">0</div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div id="controls">
+      <button class="control-btn" id="mute-btn" onclick="toggleMute()">🔊 Mute</button>
+    </div>
+
+    <!-- Touch Instruction (Mobile) -->
+    <div class="touch-instruction" id="touch-hint">
+      Toca para nadar ↑
+    </div>
+  </div>
+
+  <!-- Menu Overlay -->
+  <div class="modal-overlay active" id="menu-overlay">
+    <div class="modal-content">
+      <h2>🐋 JONÁS Y LA BALLENA</h2>
+      <p>¡Escapa por el océano esquivando obstáculos!</p>
+
+      <div class="instructions">
+        <p><strong>🎮 Controles:</strong></p>
+        <p>• Presiona <strong>ESPACIO</strong> o <strong>CLIC</strong> para nadar hacia arriba</p>
+        <p>• Evita los arrecifes de coral</p>
+        <p>• Recoge peces 🐟 (+10 pts) y pergaminos 📜 (+50 pts)</p>
+        <p>• ¡La dificultad aumenta con el tiempo!</p>
+      </div>
+
+      <p style="margin-top: 20px;">
+        <span class="high-score-badge">🏆 Récord: <span id="menu-high-score">0</span></span>
+      </p>
+
+      <button class="btn-primary" onclick="game.handleInput()">
+        ⚡ COMENZAR JUEGO
+      </button>
+    </div>
+  </div>
+
+  <!-- Pause Overlay -->
+  <div class="modal-overlay" id="pause-overlay">
+    <div class="modal-content">
+      <h2>⏸️ PAUSADO</h2>
+      <p>El juego está en pausa</p>
+
+      <button class="btn-primary" onclick="game.togglePause()">
+        ▶️ CONTINUAR
+      </button>
+      <button class="btn-secondary" onclick="goBack()">
+        🏠 VOLVER AL MENÚ
+      </button>
+    </div>
+  </div>
+
+  <!-- Game Over Overlay -->
+  <div class="modal-overlay" id="gameover-overlay">
+    <div class="modal-content">
+      <h2>💀 GAME OVER</h2>
+
+      <div id="new-high-score-badge" class="high-score-badge hidden">
+        🎉 ¡NUEVO RÉCORD!
+      </div>
+
+      <p>Puntuación Final</p>
+      <div class="score-big" id="final-score">0</div>
+
+      <p style="margin-top: 20px;">
+        Mejor Puntuación: <strong id="gameover-high-score">0</strong>
+      </p>
+
+      <button class="btn-primary" onclick="game.handleInput()">
+        🔄 JUGAR DE NUEVO
+      </button>
+      <button class="btn-secondary" onclick="goBack()">
+        🏠 VOLVER AL HUB
+      </button>
+    </div>
+  </div>
+
+  <!-- Game Scripts -->
+  <script src="config.js?v=3"></script>
+  <script src="audio.js?v=3"></script>
+  <script src="entities.js?v=3"></script>
+  <script src="game.js?v=3"></script>
+
+  <script>
+    // Hide touch instruction on desktop
+    if (!('ontouchstart' in window)) {
+      document.getElementById('touch-hint').style.display = 'none';
+    }
+
+    // Hide touch instruction after first interaction
+    let interacted = false;
+    document.addEventListener('click', () => {
+      if (!interacted) {
+        document.getElementById('touch-hint').classList.add('fade-out');
+        interacted = true;
+      }
+    });
+    document.addEventListener('touchstart', () => {
+      if (!interacted) {
+        document.getElementById('touch-hint').classList.add('fade-out');
+        interacted = true;
+      }
+    });
+  </script>
+</body>
+
+</html>

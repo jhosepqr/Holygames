@@ -35,6 +35,9 @@ function launchGame(gameId) {
 
     // Ensure canvas has focus for input
     document.getElementById("gameCanvas").focus();
+  } else if (gameId === "jonas") {
+    // Navigate to Jonas game
+    window.location.href = "games/jonas/index.html";
   }
 }
 
