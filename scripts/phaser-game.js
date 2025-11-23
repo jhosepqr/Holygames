@@ -27,14 +27,21 @@ class PeregrinoScene extends Phaser.Scene {
       isSabbath: false,
     };
 
-    this.player = { x: 1, y: 1 };
+    this.player = { x: 40, y: 40 }; // Pixel coordinates
+    this.velocity = { x: 0, y: 0 };
+
+    // Physics Constants
+    this.MAX_SPEED = 300;
+    this.ACCELERATION = 1500;
+    this.FRICTION = 700;
+    this.TURN_SPEED = 1500;
+
     this.entities = [];
     this.particles = [];
     this.map = [];
-    this.moveCooldown = 0;
-    this.lastDx = 0;
-    this.lastDy = 0;
-    this.lastMoveTime = 0;
+    // this.moveCooldown = 0; // Removed
+    // this.lastDx = 0; // Removed
+    // this.lastDy = 0; // Removed
     this.DAYS = [
       "Domingo",
       "Lunes",
@@ -241,15 +248,16 @@ class PeregrinoScene extends Phaser.Scene {
 
     g.destroy();
 
-    // 10. Fog Texture (Soft Light Gradient)
+    // 10. Fog Texture (Sharper gradient for clearer visible area)
     const fogSize = 2000;
     const fogCanvas = this.textures.createCanvas('fog', fogSize, fogSize);
     const ctx = fogCanvas.context;
 
     const grd = ctx.createRadialGradient(fogSize / 2, fogSize / 2, 0, fogSize / 2, fogSize / 2, fogSize / 2);
     grd.addColorStop(0, 'rgba(26, 32, 44, 0)');
-    grd.addColorStop(0.025, 'rgba(26, 32, 44, 0)');
-    grd.addColorStop(0.1, 'rgba(26, 32, 44, 1.0)');
+    grd.addColorStop(0.08, 'rgba(26, 32, 44, 0)'); // Clear radius 80px (at scale 1)
+    grd.addColorStop(0.12, 'rgba(26, 32, 44, 0.9)'); // Sharp fade
+    grd.addColorStop(0.15, 'rgba(26, 32, 44, 1.0)'); // Full darkness by 150px
     grd.addColorStop(1, 'rgba(26, 32, 44, 1.0)');
 
     ctx.fillStyle = grd;
@@ -262,8 +270,9 @@ class PeregrinoScene extends Phaser.Scene {
     this.entities = [];
     let wallProb = 0.85 - this.state.level * 0.02;
     this.state.lampsNeeded = Math.floor((2 + this.state.level) * 0.7);
-    this.player.x = 1;
-    this.player.y = 1;
+    this.player.x = 40;
+    this.player.y = 40;
+    this.velocity = { x: 0, y: 0 };
     this.state.lamps = 0;
 
     this.mapGroup.clear(true, true);
@@ -325,9 +334,43 @@ class PeregrinoScene extends Phaser.Scene {
 
   update(time, delta) {
     this.graphics.clear();
-    if (this.playerSprite) this.playerSprite.setPosition(this.player.x * 40, this.player.y * 40);
-    if (this.moveCooldown > 0) this.moveCooldown--;
-    this.moveTimer = (this.moveTimer || 0) + 1;
+
+    // Physics Movement
+    if (this.state.mode === "PLAY" || this.state.mode === "SABBATH") {
+      const dt = delta / 1000;
+
+      // Apply Velocity
+      let nextX = this.player.x + this.velocity.x * dt;
+      let nextY = this.player.y + this.velocity.y * dt;
+
+      // Collision X
+      if (!this.checkCollision(nextX, this.player.y)) {
+        this.player.x = nextX;
+      } else {
+        this.velocity.x = 0;
+        // Optional: Snap to grid? No, just stop.
+      }
+
+      // Collision Y
+      if (!this.checkCollision(this.player.x, nextY)) {
+        this.player.y = nextY;
+      } else {
+        this.velocity.y = 0;
+      }
+
+      // Update Player Sprite
+      if (this.playerSprite) {
+        this.playerSprite.setPosition(this.player.x, this.player.y);
+      }
+
+      // Handle Input (Calculate velocity for next frame)
+      this.handleInput(time, delta);
+
+      // Check Interactions
+      this.checkEntityInteractions();
+    }
+
+    // Move Timer removed (physics doesn't need it)
 
     if (this.state.mode === "PLAY") {
       this.state.dayTime += this.state.isSabbath ? 0.5 : 0.1;
@@ -347,10 +390,14 @@ class PeregrinoScene extends Phaser.Scene {
           let tx = w.x, ty = w.y;
           const chaseChance = this.state.level * 0.1;
           if (Math.random() < chaseChance) {
-            if (w.x < this.player.x) tx++;
-            else if (w.x > this.player.x) tx--;
-            else if (w.y < this.player.y) ty++;
-            else if (w.y > this.player.y) ty--;
+            // AI Logic needs to convert player pixels to grid
+            let pxGrid = Math.floor((this.player.x + 20) / 40);
+            let pyGrid = Math.floor((this.player.y + 20) / 40);
+
+            if (w.x < pxGrid) tx++;
+            else if (w.x > pxGrid) tx--;
+            else if (w.y < pyGrid) ty++;
+            else if (w.y > pyGrid) ty--;
           } else {
             let moves = [{ x: 0, y: 1 }, { x: 0, y: -1 }, { x: 1, y: 0 }, { x: -1, y: 0 }];
             let m = moves[Math.floor(Math.random() * 4)];
@@ -359,7 +406,9 @@ class PeregrinoScene extends Phaser.Scene {
           if (this.map[ty][tx] !== 1 && this.map[ty][tx] !== 9) {
             w.x = tx; w.y = ty;
           }
-          if (w.x === this.player.x && w.y === this.player.y) {
+          // Enemy Collision with Player (Distance check)
+          let dist = Phaser.Math.Distance.Between(w.x * 40, w.y * 40, this.player.x, this.player.y);
+          if (dist < 30) {
             this.state.faith -= 15;
             this.createParts(this.player.x, this.player.y, "red", 10);
           }
@@ -372,7 +421,7 @@ class PeregrinoScene extends Phaser.Scene {
       if (this.state.faith <= 0) this.endGame(false);
     }
 
-    if (this.state.mode === "PLAY" || this.state.mode === "SABBATH") this.handleInput(time);
+    // Input handled inside update loop now
     this.drawParticles();
 
     // Lighting (Day/Night cycle removed for constant light)
@@ -390,27 +439,13 @@ class PeregrinoScene extends Phaser.Scene {
     this.drawFog();
   }
 
-  drawFog() {
-    const width = this.sys.canvas.width;
-    const height = this.sys.canvas.height;
-    const px = this.player.x * 40 + 20;
-    const py = this.player.y * 40 + 20;
-
-    if (this.fogSprite) {
-      this.fogSprite.x = px;
-      this.fogSprite.y = py;
-      const targetRadius = 80 + (this.state.lamps * 40);
-      const scale = targetRadius / 50;
-      this.fogSprite.setScale(scale);
-    }
-  }
-
-  handleInput(time) {
+  handleInput(time, delta) {
     if (this.state.mode === "QUIZ") return;
     if (isMessageVisible && (Phaser.Input.Keyboard.JustDown(this.cursors.up) || Phaser.Input.Keyboard.JustDown(this.cursors.down) || Phaser.Input.Keyboard.JustDown(this.cursors.left) || Phaser.Input.Keyboard.JustDown(this.cursors.right) || Phaser.Input.Keyboard.JustDown(this.keys.W) || Phaser.Input.Keyboard.JustDown(this.keys.S) || Phaser.Input.Keyboard.JustDown(this.keys.A) || Phaser.Input.Keyboard.JustDown(this.keys.D))) {
       hideMessage();
     }
-    let moved = false; let dx = 0, dy = 0;
+
+    // Sabbath Prayer
     if (this.state.isSabbath) {
       if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE) || Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
         this.state.faith = Math.min(100, this.state.faith + 5);
@@ -419,65 +454,150 @@ class PeregrinoScene extends Phaser.Scene {
         return;
       }
     }
-    if (Phaser.Input.Keyboard.JustDown(this.cursors.up) || (this.cursors.up.isDown && this.moveTimer > 3)) dy = -1;
-    else if (Phaser.Input.Keyboard.JustDown(this.cursors.down) || (this.cursors.down.isDown && this.moveTimer > 3)) dy = 1;
-    else if (Phaser.Input.Keyboard.JustDown(this.cursors.left) || (this.cursors.left.isDown && this.moveTimer > 3)) dx = -1;
-    else if (Phaser.Input.Keyboard.JustDown(this.cursors.right) || (this.cursors.right.isDown && this.moveTimer > 3)) dx = 1;
 
-    if (dx !== 0 || dy !== 0) {
-      if (this.state.isSabbath) {
-        this.state.faith -= 5;
-        this.createParts(this.player.x, this.player.y, "red", 3);
-      }
-      let tx = this.player.x + dx;
-      let ty = this.player.y + dy;
-      if (this.map[ty][tx] !== 1) {
-        this.player.x = tx; this.player.y = ty;
-        this.checkCol();
-        moved = true;
-      }
+    // Movement Logic
+    let input = { x: 0, y: 0 };
+    if (this.cursors.left.isDown || this.keys.A.isDown) input.x = -1;
+    if (this.cursors.right.isDown || this.keys.D.isDown) input.x = 1;
+    if (this.cursors.up.isDown || this.keys.W.isDown) input.y = -1;
+    if (this.cursors.down.isDown || this.keys.S.isDown) input.y = 1;
+
+    // Normalize diagonal
+    if (input.x !== 0 && input.y !== 0) {
+      input.x *= 0.707;
+      input.y *= 0.707;
     }
-    if (moved) {
-      this.moveTimer = 0; this.lastDx = dx; this.lastDy = dy;
+
+    const dt = delta / 1000; // Delta in seconds
+
+    // Apply Physics (X)
+    if (input.x !== 0) {
+      let changingDirection = (input.x > 0 && this.velocity.x < 0) || (input.x < 0 && this.velocity.x > 0);
+      if (changingDirection) {
+        this.velocity.x = this.moveTowards(this.velocity.x, input.x * this.MAX_SPEED, this.TURN_SPEED * dt);
+      } else {
+        this.velocity.x = this.moveTowards(this.velocity.x, input.x * this.MAX_SPEED, this.ACCELERATION * dt);
+      }
+    } else {
+      this.velocity.x = this.moveTowards(this.velocity.x, 0, this.FRICTION * dt);
+    }
+
+    // Apply Physics (Y)
+    if (input.y !== 0) {
+      let changingDirection = (input.y > 0 && this.velocity.y < 0) || (input.y < 0 && this.velocity.y > 0);
+      if (changingDirection) {
+        this.velocity.y = this.moveTowards(this.velocity.y, input.y * this.MAX_SPEED, this.TURN_SPEED * dt);
+      } else {
+        this.velocity.y = this.moveTowards(this.velocity.y, input.y * this.MAX_SPEED, this.ACCELERATION * dt);
+      }
+    } else {
+      this.velocity.y = this.moveTowards(this.velocity.y, 0, this.FRICTION * dt);
+    }
+
+    // Sabbath Penalty for movement
+    if ((input.x !== 0 || input.y !== 0) && this.state.isSabbath) {
+      // Reduce faith slowly if moving on Sabbath
+      if (Math.random() < 0.05) {
+        this.state.faith -= 1;
+        this.createParts(this.player.x, this.player.y, "red", 1);
+      }
     }
   }
 
-  checkCol() {
-    let idx = this.entities.findIndex((e) => e.x === this.player.x && e.y === this.player.y);
-    if (idx > -1) {
-      let e = this.entities[idx];
-      if (e.type === "lamp") {
-        this.state.lamps++;
-        if (e.sprite) e.sprite.destroy();
-        this.entities.splice(idx, 1);
-        this.createParts(this.player.x, this.player.y, "gold", 10);
-        showMessage("¡Encontraste una lámpara! +1");
-      }
-      if (e.type === "fruit") {
-        this.state.faith = Math.min(100, this.state.faith + 20);
-        if (e.sprite) e.sprite.destroy();
-        this.entities.splice(idx, 1);
-        showMessage("¡Fruta espiritual! +20 Fe");
-      }
-      if (e.type === "wolf") {
-        this.state.faith -= 20;
-        this.player.x = 1; this.player.y = 1;
-        this.createParts(this.player.x, this.player.y, "red", 10);
-        showMessage("¡Atacado por lobo! -20 Fe");
-      }
-      if (e.type === "scroll") {
-        if (e.sprite) e.sprite.destroy();
-        this.entities.splice(idx, 1);
-        this.startQuiz();
-        showMessage("Pergamino de doctrina encontrado");
+  moveTowards(current, target, maxDelta) {
+    if (Math.abs(target - current) <= maxDelta) return target;
+    return current + Math.sign(target - current) * maxDelta;
+  }
+
+  checkCollision(x, y) {
+    // Check 4 corners of the player (assuming 20x20 hitbox centered at x+20, y+20)
+    // Player sprite is 40x40.
+    // Hitbox: x+10, y+10, w=20, h=20
+    // This allows "cutting corners" by 10px on each side
+    const points = [
+      { x: x + 10, y: y + 10 },
+      { x: x + 30, y: y + 10 },
+      { x: x + 10, y: y + 30 },
+      { x: x + 30, y: y + 30 }
+    ];
+
+    for (let p of points) {
+      let gx = Math.floor(p.x / 40);
+      let gy = Math.floor(p.y / 40);
+
+      // Bounds check
+      if (gx < 0 || gx >= this.GRID_W || gy < 0 || gy >= this.GRID_H) return true;
+
+      // Wall check
+      if (this.map[gy][gx] === 1) return true;
+    }
+    return false;
+  }
+
+  checkEntityInteractions() {
+    // Distance check for interactions
+    // Player center
+    let px = this.player.x + 20;
+    let py = this.player.y + 20;
+
+    for (let i = this.entities.length - 1; i >= 0; i--) {
+      let e = this.entities[i];
+      let ex = e.x * 40 + 20;
+      let ey = e.y * 40 + 20;
+
+      if (Phaser.Math.Distance.Between(px, py, ex, ey) < 30) {
+        // Interact
+        if (e.type === "lamp") {
+          this.state.lamps++;
+          if (e.sprite) e.sprite.destroy();
+          this.entities.splice(i, 1);
+          this.createParts(this.player.x, this.player.y, "gold", 10);
+          showMessage("¡Encontraste una lámpara! +1");
+        } else if (e.type === "fruit") {
+          this.state.faith = Math.min(100, this.state.faith + 20);
+          if (e.sprite) e.sprite.destroy();
+          this.entities.splice(i, 1);
+          showMessage("¡Fruta espiritual! +20 Fe");
+        } else if (e.type === "scroll") {
+          if (e.sprite) e.sprite.destroy();
+          this.entities.splice(i, 1);
+          this.startQuiz();
+          showMessage("Pergamino de doctrina encontrado");
+        }
       }
     }
-    if (this.map[this.player.y][this.player.x] === 9) {
+
+    // Check Exit
+    let exitX = (this.GRID_W - 2) * 40 + 20;
+    let exitY = (this.GRID_H - 2) * 40 + 20;
+    if (Phaser.Math.Distance.Between(px, py, exitX, exitY) < 30) {
       if (this.state.lamps >= this.state.lampsNeeded) this.nextLevel();
       else {
-        showMessage(`Necesitas ${this.state.lampsNeeded - this.state.lamps} lámparas más para entrar al Santuario.`);
-        this.player.y--;
+        // Only show message occasionally or push back?
+        // Just show message if close
+        // showMessage(`Necesitas ${this.state.lampsNeeded - this.state.lamps} lámparas.`);
       }
+    }
+  }
+
+
+
+  drawFog() {
+    const width = this.sys.canvas.width;
+    const height = this.sys.canvas.height;
+    // Player is already in pixels
+    const px = this.player.x + 20; // Center
+    const py = this.player.y + 20; // Center
+
+    if (this.fogSprite) {
+      this.fogSprite.x = px;
+      this.fogSprite.y = py;
+      // Base radius 80px (2 blocks) + 40px per lamp
+      const targetRadius = 80 + (this.state.lamps * 40);
+      // Texture has clear radius of 100px (0.1 * 1000)
+      // So scale = targetRadius / 100
+      const scale = targetRadius / 100;
+      this.fogSprite.setScale(scale);
     }
   }
 
@@ -526,7 +646,7 @@ class PeregrinoScene extends Phaser.Scene {
   createParts(x, y, c, n) {
     for (let i = 0; i < n; i++) {
       this.particles.push({
-        x: x * 40 + 20, y: y * 40 + 20,
+        x: x + 20, y: y + 20, // Already in pixels, just center
         vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4,
         life: 1, c: c,
       });
