@@ -33,7 +33,7 @@ class PeregrinoScene extends Phaser.Scene {
     // Physics Constants
     this.MAX_SPEED = 300;
     this.ACCELERATION = 1500;
-    this.FRICTION = 700;
+    this.FRICTION = 550;
     this.TURN_SPEED = 1500;
 
     this.entities = [];
