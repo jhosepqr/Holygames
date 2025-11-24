@@ -248,10 +248,13 @@ class Game {
 
     updateDifficulty() {
         // Increase speed based on score
-        const targetSpeed = CONFIG.obstacles.speed +
-            Math.floor(this.score / CONFIG.scoring.difficultyStep) * CONFIG.obstacles.speedIncrement;
+        // Formula: Initial Speed + (Score * Increment)
+        const targetSpeed = CONFIG.obstacles.speed + (this.score * CONFIG.obstacles.speedIncrement);
 
         this.gameSpeed = Math.min(targetSpeed, CONFIG.obstacles.maxSpeed);
+
+        // Optional: Log difficulty changes for debugging
+        // if (this.frameCount % 60 === 0) console.log(`Speed: ${this.gameSpeed.toFixed(2)}`);
     }
 
     updateHUD() {

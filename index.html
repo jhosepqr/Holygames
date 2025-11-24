@@ -182,13 +182,6 @@
       /* Ancho mínimo para uniformidad */
     }
 
-    .stat-box {
-      background: rgba(0, 0, 0, 0.6);
-      padding: 5px 10px;
-      border-radius: 4px;
-      border-left: 3px solid var(--holy-gold);
-    }
-
     /* Botón Regresar al Hub */
     .back-btn {
       position: absolute;
@@ -326,27 +319,27 @@
         </div>
       </div>
 
-      <!-- CARD JUEGO 3 (Placeholder) -->
-      <div
-        class="game-card rounded-xl p-6 flex flex-col justify-between h-80 opacity-60 grayscale hover:grayscale-0 hover:opacity-100">
-        <div class="absolute top-0 right-0 bg-gray-700 text-white text-xs font-bold px-2 py-1 rounded-bl-lg">
-          EN DESARROLLO
+      <!-- CARD JUEGO 3: DAVID VS GOLIAT (Activo) -->
+      <div class="game-card rounded-xl p-6 flex flex-col justify-between h-80 group"
+        onclick="window.location.href='games/david/index.html'">
+        <div class="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-bl-lg">
+          3D BETA
         </div>
         <div class="mt-4">
           <div
-            class="w-16 h-16 bg-gray-800 rounded-lg mb-4 flex items-center justify-center text-3xl border border-gray-600">
-            🔨
+            class="w-16 h-16 bg-gradient-to-br from-orange-600 to-red-800 rounded-lg mb-4 flex items-center justify-center text-3xl shadow-lg shadow-orange-500/50">
+            🪨
           </div>
-          <h3 class="text-2xl font-bold text-gray-300 font-serif mb-2">
-            Arca Builder
+          <h3 class="text-2xl font-bold text-white font-serif mb-2 group-hover:text-orange-400 transition">
+            David vs Goliat
           </h3>
-          <p class="text-sm text-gray-500">
-            Construye el arca antes del diluvio. Gestión de recursos y fe.
+          <p class="text-sm text-gray-400">
+            Enfréntate al gigante en primera persona. Usa tu honda y tu fe para vencer.
           </p>
         </div>
         <div class="mt-4">
-          <button class="w-full py-2 border border-gray-600 text-gray-500 rounded cursor-not-allowed">
-            BLOQUEADO
+          <button class="btn-cyber w-full py-2 rounded font-bold">
+            JUGAR AHORA
           </button>
         </div>
       </div>
@@ -462,14 +455,8 @@
     </div>
   </div>
 
-  <!-- Message Overlay -->
-  <div id="message-overlay" class="fixed bottom-4 left-0 right-0 flex justify-center z-[1000]" style="display: none">
-    <div class="bg-white p-3 rounded text-black text-center max-w-sm shadow-lg"></div>
-  </div>
-
-  <script src="scripts/main.js"></script>
-  <script src="scripts/phaser-game.js"></script>
-  <script src="scripts/game.js"></script>
+  <script src="scripts/main.js?v=4"></script>
+  <script src="scripts/phaser-game.js?v=4"></script>
 </body>
 
 </html>

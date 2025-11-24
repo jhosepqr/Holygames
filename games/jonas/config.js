@@ -22,9 +22,9 @@ const CONFIG = {
     minGap: 180,         // Minimum gap (increased from 160)
     maxGap: 260,         // Maximum gap (increased from 240)
     spacing: 400,        // Distance between obstacles (increased from 350)
-    speed: 3,            // Initial scroll speed (reduced from 4)
-    speedIncrement: 0.05,// Speed increase per point
-    maxSpeed: 8,         // Maximum speed (reduced from 9)
+    speed: 2.5,          // Initial scroll speed (reduced from 3 for easier start)
+    speedIncrement: 0.01, // Speed increase per point (drastically reduced for smooth ramp-up)
+    maxSpeed: 9,         // Maximum speed (increased from 8)
     color: '#2C3E50'
   },
 

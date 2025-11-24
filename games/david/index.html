@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>David vs Goliat - 3D</title>
+    <link rel="stylesheet" href="style.css?v=2">
+    <!-- Load Three.js from CDN -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <div id="game-container"></div>
+
+    <div id="ui-layer">
+        <div id="crosshair">+</div>
+
+        <div id="power-bar-container">
+            <div id="power-bar"></div>
+        </div>
+
+        <div id="ammo-display">🪨 Piedras: <span id="ammo-count">0</span></div>
+
+        <div id="goliath-health-container">
+            <div class="health-label">GOLIAT</div>
+            <div id="goliath-health-bar"></div>
+        </div>
+
+        <div id="instructions">
+            Mover: WASD | Apuntar: Mouse | Cargar: Click Izquierdo | Disparar: Soltar
+        </div>
+
+        <div id="message-overlay" class="hidden">
+            <h1 id="message-title">Título</h1>
+            <p id="message-subtitle">Subtítulo</p>
+            <button id="restart-btn">Jugar de Nuevo</button>
+        </div>
+
+        <button id="back-btn" onclick="window.location.href='../../index.html'">◀ Volver</button>
+    </div>
+
+    <script type="module" src="src/main.js?v=3"></script>
+</body>
+
+</html>

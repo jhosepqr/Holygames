@@ -353,17 +353,48 @@ class Whale {
         ctx.closePath();
         ctx.fill();
 
-        // Eye (menacing!)
-        ctx.fillStyle = 'rgba(255, 50, 50, 0.8)'; // Red eye for threat
+        // MOUTH (Open and menacing)
+        ctx.fillStyle = '#1a252f'; // Darker inside mouth
         ctx.beginPath();
-        ctx.arc(this.size * 0.7, -this.size * 0.2, this.size * 0.2, 0, Math.PI * 2);
+        // Draw a wedge/pacman shape for the mouth on the right side
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, this.size * 1.1, 0.2, -0.2, true); // Open mouth arc
+        ctx.fill();
+
+        // Re-draw body color over the back part to make it look like a mouth opening
+        ctx.fillStyle = CONFIG.whale.color;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.size * 0.8, 0, Math.PI * 2); // Inner body to mask
+        // Actually, let's just draw the mouth as a cutout or added shape
+        // Simpler approach: Draw a dark sector for the mouth
+
+        // Reset and redraw body with mouth cutout
+        ctx.fillStyle = CONFIG.whale.color;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.size, 0.3, -0.3, true); // Main body with mouth gap
+        ctx.fill();
+
+        // Eye (menacing!)
+        ctx.fillStyle = 'rgba(255, 50, 50, 0.9)'; // Red eye for threat
+        ctx.beginPath();
+        ctx.arc(this.size * 0.5, -this.size * 0.3, this.size * 0.15, 0, Math.PI * 2);
         ctx.fill();
 
         // Pupil
         ctx.fillStyle = 'black';
         ctx.beginPath();
-        ctx.arc(this.size * 0.75, -this.size * 0.2, this.size * 0.1, 0, Math.PI * 2);
+        ctx.arc(this.size * 0.55, -this.size * 0.3, this.size * 0.05, 0, Math.PI * 2);
         ctx.fill();
+
+        // Teeth (optional, but adds to the menace)
+        ctx.fillStyle = 'white';
+        for (let i = 0; i < 3; i++) {
+            ctx.beginPath();
+            ctx.moveTo(this.size * 0.8, -this.size * 0.2 + (i * 15));
+            ctx.lineTo(this.size * 0.95, -this.size * 0.15 + (i * 15));
+            ctx.lineTo(this.size * 0.8, -this.size * 0.1 + (i * 15));
+            ctx.fill();
+        }
 
         ctx.restore();
     }

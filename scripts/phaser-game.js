@@ -31,9 +31,9 @@ class PeregrinoScene extends Phaser.Scene {
     this.velocity = { x: 0, y: 0 };
 
     // Physics Constants
-    this.MAX_SPEED = 300;
+    this.MAX_SPEED = 250;
     this.ACCELERATION = 1500;
-    this.FRICTION = 550;
+    this.FRICTION = 850;
     this.TURN_SPEED = 1500;
 
     this.entities = [];
@@ -676,6 +676,10 @@ class PeregrinoScene extends Phaser.Scene {
     this.state.dayTime = 40;
     this.state.dayIndex = 5;
 
+    // Reset logical player position
+    this.player = { x: 40, y: 40 };
+    this.velocity = { x: 0, y: 0 };
+
     if (this.playerSprite) this.playerSprite.destroy();
     this.playerSprite = this.add.sprite(0, 0, 'player').setOrigin(0);
     this.playerSprite.setDepth(101); // Ensure player is always visible above fog
@@ -703,8 +707,18 @@ window.peregrinoStart = function () {
 };
 
 window.peregrinoReset = function () {
-  if (game && game.scene.getScene("PeregrinoScene")) {
-    game.scene.getScene("PeregrinoScene").peregrinoReset();
+  console.log("Global peregrinoReset called");
+  if (window.game) {
+    console.log("Game instance found");
+    const scene = window.game.scene.getScene("PeregrinoScene");
+    if (scene) {
+      console.log("Scene found, calling scene.peregrinoReset()");
+      scene.peregrinoReset();
+    } else {
+      console.error("Scene 'PeregrinoScene' not found");
+    }
+  } else {
+    console.error("Game instance not found");
   }
 };
 

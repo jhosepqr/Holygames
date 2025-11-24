@@ -1,5 +1,5 @@
 /* --- SYSTEM MANAGER --- */
-let game; // Phaser game instance
+window.game = null; // Phaser game instance
 
 function launchGame(gameId) {
   if (gameId === "peregrino") {
