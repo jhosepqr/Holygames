@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Noé y el Arca - HolyGame</title>
+
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Back Button -->
+    <button id="back-btn" onclick="goBack()">◀ VOLVER AL HUB</button>
+
+    <!-- Game Container -->
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- HUD -->
+        <div id="hud">
+            <div class="stat-item">
+                <div>Puntuación</div>
+                <div class="stat-value" id="score">0</div>
+            </div>
+            <div class="stat-item">
+                <div>Récord</div>
+                <div class="stat-value" id="high-score">0</div>
+            </div>
+            <div class="stat-item">
+                <div>Nivel</div>
+                <div class="stat-value level" id="level">1</div>
+            </div>
+            <div class="stat-item missed-counter">
+                <div>Perdidos</div>
+                <div class="stat-value missed" id="missed">0/5</div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div id="controls">
+            <button class="control-btn" id="mute-btn" onclick="toggleMute()">🔊 Sonido</button>
+        </div>
+
+        <!-- Touch Controls -->
+        <div id="touch-controls">
+            <button class="touch-btn" id="btn-left">◀</button>
+            <button class="touch-btn" id="btn-right">▶</button>
+        </div>
+
+        <!-- Touch Instruction -->
+        <div class="touch-instruction" id="touch-hint">
+            ← Usa las flechas para mover a Noé →
+        </div>
+    </div>
+
+    <!-- Menu Overlay -->
+    <div class="modal-overlay active" id="menu-overlay">
+        <div class="modal-content">
+            <div class="game-title">🐑 NOÉ Y EL ARCA 🚢</div>
+            <p class="subtitle">¡Salva a los animales del diluvio!</p>
+
+            <div class="instructions">
+                <p><strong>🎮 Controles:</strong></p>
+                <p>• Flechas <strong>← →</strong> o botones táctiles para mover</p>
+                <p>• Atrapa los animales que caen</p>
+                <p>• 🌈 Arcoíris = +50 puntos bonus</p>
+                <p>• Captura parejas para bonus extra</p>
+                <p>• ¡No dejes escapar más de 5 animales!</p>
+            </div>
+
+            <p class="high-score-display">
+                🏆 Récord: <span id="menu-high-score">0</span>
+            </p>
+
+            <button class="btn-primary" onclick="game.handleAction()">
+                ⚡ COMENZAR
+            </button>
+        </div>
+    </div>
+
+    <!-- Pause Overlay -->
+    <div class="modal-overlay" id="pause-overlay">
+        <div class="modal-content">
+            <h2>⏸️ PAUSADO</h2>
+            <p>El juego está en pausa</p>
+
+            <button class="btn-primary" onclick="game.togglePause()">
+                ▶️ CONTINUAR
+            </button>
+            <button class="btn-secondary" onclick="goBack()">
+                🏠 VOLVER AL HUB
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Over Overlay -->
+    <div class="modal-overlay" id="gameover-overlay">
+        <div class="modal-content">
+            <h2>🌧️ ¡GAME OVER!</h2>
+            <p class="gameover-message">El diluvio ha llegado...</p>
+
+            <div id="new-record-badge" class="new-record hidden">
+                🎉 ¡NUEVO RÉCORD!
+            </div>
+
+            <p>Puntuación Final</p>
+            <div class="score-big" id="final-score">0</div>
+
+            <div class="stats-row">
+                <div class="stat-box">
+                    <div>Animales Salvados</div>
+                    <div class="stat-value" id="animals-saved">0</div>
+                </div>
+                <div class="stat-box">
+                    <div>Mejor Puntuación</div>
+                    <div class="stat-value" id="gameover-high-score">0</div>
+                </div>
+            </div>
+
+            <button class="btn-primary" onclick="game.handleAction()">
+                🔄 JUGAR DE NUEVO
+            </button>
+            <button class="btn-secondary" onclick="goBack()">
+                🏠 VOLVER AL HUB
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Scripts -->
+    <script src="config.js?v=1"></script>
+    <script src="audio.js?v=1"></script>
+    <script src="entities.js?v=1"></script>
+    <script src="game.js?v=1"></script>
+
+    <script>
+        // Show touch controls only on mobile
+        if ('ontouchstart' in window) {
+            document.getElementById('touch-controls').style.display = 'flex';
+        }
+
+        // Hide touch hint after first interaction
+        let interacted = false;
+        ['click', 'touchstart', 'keydown'].forEach(event => {
+            document.addEventListener(event, () => {
+                if (!interacted) {
+                    document.getElementById('touch-hint').classList.add('fade-out');
+                    interacted = true;
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
